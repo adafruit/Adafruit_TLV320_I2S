@@ -42,8 +42,91 @@
 #define TLV320DAC3100_REG_BCLK_N        0x1E    ///< BCLK N divider value
 #define TLV320DAC3100_REG_DAC_FLAG      0x25    ///< DAC Flag register
 #define TLV320DAC3100_REG_DAC_FLAG2     0x26    ///< DAC Flag register 2
-#define TLV320DAC3100_REG_INT1_CTRL     0x30    ///< INT1 Control Register
-#define TLV320DAC3100_REG_INT2_CTRL     0x31    ///< INT2 Control Register
+#define TLV320DAC3100_REG_INT1_CTRL   0x30  ///< INT1 Control Register
+#define TLV320DAC3100_REG_INT2_CTRL   0x31  ///< INT2 Control Register
+#define TLV320DAC3100_REG_GPIO1_CTRL  0x33  ///< GPIO1 In/Out Pin Control Register
+#define TLV320DAC3100_REG_DIN_CTRL    0x36  ///< DIN Pin Control Register
+#define TLV320DAC3100_REG_DAC_PRB    0x3C  ///< DAC Processing Block Selection Register
+#define TLV320DAC3100_REG_DAC_DATAPATH  0x3F  ///< DAC Data-Path Setup Register
+#define TLV320DAC3100_REG_DAC_VOL_CTRL  0x40  ///< DAC Volume Control Register
+#define TLV320DAC3100_REG_DAC_LVOL  0x41  ///< DAC Left Volume Control Register
+#define TLV320DAC3100_REG_DAC_RVOL  0x42  ///< DAC Right Volume Control Register
+#define TLV320DAC3100_REG_HEADSET_DETECT  0x43  ///< Headset Detection Register
+#define TLV320DAC3100_REG_BEEP_L  0x47  ///< Left Beep Generator Register
+#define TLV320DAC3100_REG_BEEP_R  0x48  ///< Right Beep Generator Register
+#define TLV320DAC3100_REG_BEEP_LEN_MSB    0x49  ///< Beep Length MSB Register
+#define TLV320DAC3100_REG_BEEP_LEN_MID    0x4A  ///< Beep Length Middle Bits Register
+#define TLV320DAC3100_REG_BEEP_LEN_LSB    0x4B  ///< Beep Length LSB Register
+#define TLV320DAC3100_REG_BEEP_SIN_MSB    0x4C  ///< Beep Sin(x) MSB Register
+#define TLV320DAC3100_REG_BEEP_SIN_LSB    0x4D  ///< Beep Sin(x) LSB Register
+#define TLV320DAC3100_REG_BEEP_COS_MSB    0x4E  ///< Beep Cos(x) MSB Register
+#define TLV320DAC3100_REG_BEEP_COS_LSB    0x4F  ///< Beep Cos(x) LSB Register
+#define TLV320DAC3100_REG_VOL_ADC_CTRL    0x74  ///< VOL/MICDET-Pin SAR ADC Control Register
+#define TLV320DAC3100_REG_VOL_ADC_READ    0x75  ///< VOL/MICDET-Pin Gain Register
+
+// Page 1
+#define TLV320DAC3100_REG_HP_SPK_ERR_CTL  0x1E  ///< Headphone and Speaker Error Control Register
+#define TLV320DAC3100_REG_HP_DRIVERS  0x1F  ///< Headphone Drivers Register
+
+/*!
+ * @brief Headset detection debounce time options
+ */
+typedef enum {
+  TLV320_DEBOUNCE_16MS = 0b000,    ///< 16ms debounce (2ms clock)
+  TLV320_DEBOUNCE_32MS = 0b001,    ///< 32ms debounce (4ms clock)
+  TLV320_DEBOUNCE_64MS = 0b010,    ///< 64ms debounce (8ms clock)
+  TLV320_DEBOUNCE_128MS = 0b011,   ///< 128ms debounce (16ms clock)
+  TLV320_DEBOUNCE_256MS = 0b100,   ///< 256ms debounce (32ms clock)
+  TLV320_DEBOUNCE_512MS = 0b101,   ///< 512ms debounce (64ms clock)
+} tlv320_detect_debounce_t;
+
+/*!
+ * @brief Button press debounce time options
+ */
+typedef enum {
+  TLV320_BTN_DEBOUNCE_0MS = 0b00,   ///< No debounce
+  TLV320_BTN_DEBOUNCE_8MS = 0b01,   ///< 8ms debounce (1ms clock)
+  TLV320_BTN_DEBOUNCE_16MS = 0b10,  ///< 16ms debounce (2ms clock)
+  TLV320_BTN_DEBOUNCE_32MS = 0b11,  ///< 32ms debounce (4ms clock)
+} tlv320_button_debounce_t;
+
+/*!
+ * @brief Headset detection status
+ */
+typedef enum {
+  TLV320_HEADSET_NONE = 0b00,        ///< No headset detected
+  TLV320_HEADSET_WITHOUT_MIC = 0b01, ///< Headset without microphone
+  TLV320_HEADSET_WITH_MIC = 0b11,    ///< Headset with microphone
+} tlv320_headset_status_t;
+
+/*!
+ * @brief DAC channel data path options
+ */
+typedef enum {
+  TLV320_DAC_PATH_OFF = 0b00,      ///< DAC data path off
+  TLV320_DAC_PATH_NORMAL = 0b01,    ///< Normal path (L->L or R->R)
+  TLV320_DAC_PATH_SWAPPED = 0b10,   ///< Swapped path (R->L or L->R)
+  TLV320_DAC_PATH_MIXED = 0b11,     ///< Mixed L+R path
+} tlv320_dac_path_t;
+
+/*!
+ * @brief DAC volume control soft stepping options
+ */
+typedef enum {
+  TLV320_VOLUME_STEP_1SAMPLE = 0b00,    ///< One step per sample
+  TLV320_VOLUME_STEP_2SAMPLE = 0b01,    ///< One step per two samples
+  TLV320_VOLUME_STEP_DISABLED = 0b10,   ///< Soft stepping disabled
+} tlv320_volume_step_t;
+
+/*!
+ * @brief DAC volume control configuration options
+ */
+typedef enum {
+  TLV320_VOL_INDEPENDENT = 0b00,    ///< Left and right channels independent
+  TLV320_VOL_LEFT_TO_RIGHT = 0b01,  ///< Left follows right volume
+  TLV320_VOL_RIGHT_TO_LEFT = 0b10,  ///< Right follows left volume
+} tlv320_vol_control_t;
+
 
 /*!
  * @brief Clock source options for CODEC_CLKIN
@@ -99,6 +182,62 @@ typedef enum {
   TLV320DAC3100_FORMAT_LJF = 0b11,       ///< Left justified format
 } tlv320dac3100_format_t;
 
+
+/*!
+ * @brief GPIO1 pin mode options
+ */
+typedef enum {
+  TLV320_GPIO1_DISABLED = 0b0000,    ///< GPIO1 disabled (input and output buffers powered down)
+  TLV320_GPIO1_INPUT_MODE = 0b0001,  ///< Input mode (secondary BCLK/WCLK/DIN input or ClockGen)
+  TLV320_GPIO1_GPI = 0b0010,         ///< General-purpose input
+  TLV320_GPIO1_GPO = 0b0011,         ///< General-purpose output
+  TLV320_GPIO1_CLKOUT = 0b0100,      ///< CLKOUT output
+  TLV320_GPIO1_INT1 = 0b0101,        ///< INT1 output
+  TLV320_GPIO1_INT2 = 0b0110,        ///< INT2 output
+  TLV320_GPIO1_BCLK_OUT = 0b1000,    ///< Secondary BCLK output for codec interface
+  TLV320_GPIO1_WCLK_OUT = 0b1001,    ///< Secondary WCLK output for codec interface
+} tlv320_gpio1_mode_t;
+
+
+/*!
+ * @brief DIN pin mode options
+ */
+typedef enum {
+  TLV320_DIN_DISABLED = 0b00,    ///< DIN disabled (input buffer powered down)
+  TLV320_DIN_ENABLED = 0b01,     ///< DIN enabled (for codec interface/ClockGen)
+  TLV320_DIN_GPI = 0b10,         ///< DIN used as general-purpose input
+} tlv320_din_mode_t;
+
+/*!
+ * @brief Volume ADC hysteresis options
+ */
+typedef enum {
+  TLV320_VOL_HYST_NONE = 0b00,   ///< No hysteresis
+  TLV320_VOL_HYST_1BIT = 0b01,   ///< ±1 bit hysteresis
+  TLV320_VOL_HYST_2BIT = 0b10,   ///< ±2 bit hysteresis
+} tlv320_vol_hyst_t;
+
+/*!
+ * @brief Volume ADC throughput rates
+ */
+typedef enum {
+  TLV320_VOL_RATE_15_625HZ = 0b000,  ///< 15.625 Hz (MCLK) or 10.68 Hz (RC)
+  TLV320_VOL_RATE_31_25HZ = 0b001,   ///< 31.25 Hz (MCLK) or 21.35 Hz (RC)
+  TLV320_VOL_RATE_62_5HZ = 0b010,    ///< 62.5 Hz (MCLK) or 42.71 Hz (RC)
+  TLV320_VOL_RATE_125HZ = 0b011,     ///< 125 Hz (MCLK) or 85.2 Hz (RC)
+  TLV320_VOL_RATE_250HZ = 0b100,     ///< 250 Hz (MCLK) or 170 Hz (RC)
+  TLV320_VOL_RATE_500HZ = 0b101,     ///< 500 Hz (MCLK) or 340 Hz (RC)
+  TLV320_VOL_RATE_1KHZ = 0b110,      ///< 1 kHz (MCLK) or 680 Hz (RC)
+  TLV320_VOL_RATE_2KHZ = 0b111,      ///< 2 kHz (MCLK) or 1.37 kHz (RC)
+} tlv320_vol_rate_t;
+
+
+typedef enum {
+  TLV320_HP_COMMON_1_35V = 0b00,  ///< Common-mode voltage 1.35V
+  TLV320_HP_COMMON_1_50V = 0b01,  ///< Common-mode voltage 1.50V
+  TLV320_HP_COMMON_1_65V = 0b10,  ///< Common-mode voltage 1.65V
+  TLV320_HP_COMMON_1_80V = 0b11,  ///< Common-mode voltage 1.80V
+} tlv320_hp_common_t;
 /*!
  * @brief Class to interact with TLV320DAC3100 DAC
  */
@@ -151,9 +290,57 @@ public:
                         bool *wclk_out);
 
   bool setInt1Source(bool headset_detect, bool button_press, bool dac_drc, 
-                    bool agc_noise, bool over_current, bool pwr_status);
+                    bool agc_noise, bool over_current, bool multiple_pulse);
   bool setInt2Source(bool headset_detect, bool button_press, bool dac_drc, 
-                    bool agc_noise, bool over_current, bool pwr_status);
+                    bool agc_noise, bool over_current, bool multiple_pulse);
+
+  bool setGPIO1Mode(tlv320_gpio1_mode_t mode);
+  tlv320_gpio1_mode_t getGPIO1Mode(void);
+  bool setGPIO1Output(bool value);
+  bool getGPIO1Input(void);
+
+  bool setDINMode(tlv320_din_mode_t mode);
+  tlv320_din_mode_t getDINMode(void);
+  bool getDINInput(void);
+
+  bool setDACProcessingBlock(uint8_t block_number);
+  uint8_t getDACProcessingBlock(void);
+
+  bool setDACDataPath(bool left_dac_on, bool right_dac_on,
+                     tlv320_dac_path_t left_path = TLV320_DAC_PATH_NORMAL,
+                     tlv320_dac_path_t right_path = TLV320_DAC_PATH_NORMAL,
+                     tlv320_volume_step_t volume_step = TLV320_VOLUME_STEP_1SAMPLE);
+  bool getDACDataPath(bool *left_dac_on, bool *right_dac_on,
+                     tlv320_dac_path_t *left_path, tlv320_dac_path_t *right_path,
+                     tlv320_volume_step_t *volume_step);
+
+  bool setDACVolumeControl(bool left_mute, bool right_mute, 
+                          tlv320_vol_control_t control = TLV320_VOL_INDEPENDENT);
+  bool getDACVolumeControl(bool *left_mute, bool *right_mute,
+                          tlv320_vol_control_t *control);
+  bool setChannelVolume(bool right_channel, float dB);
+  float getChannelVolume(bool right_channel);
+
+  bool setHeadsetDetect(bool enable, 
+                       tlv320_detect_debounce_t detect_debounce = TLV320_DEBOUNCE_16MS,
+                       tlv320_button_debounce_t button_debounce = TLV320_BTN_DEBOUNCE_0MS);
+  tlv320_headset_status_t getHeadsetStatus(void);
+
+  bool setBeepVolume(int8_t left_dB, int8_t right_dB = -100);  // -100 is sentinel value
+  bool setBeepLength(uint32_t samples);
+  bool setBeepSinCos(uint16_t sin_val, uint16_t cos_val);
+  bool configVolADC(bool pin_control, bool use_mclk, 
+                         tlv320_vol_hyst_t hysteresis,
+                         tlv320_vol_rate_t rate);
+  float readVolADCdB(void);
+
+
+  bool resetSpeakerOnSCD(bool reset);
+  bool resetHeadphoneOnSCD(bool reset);
+  bool configureHeadphoneDriver(bool left_powered, bool right_powered,
+                               tlv320_hp_common_t common = TLV320_HP_COMMON_1_35V,
+                               bool powerDownOnSCD = false);
+  bool isHeadphoneShorted(void);
 
 private:
   bool setPage(uint8_t page);

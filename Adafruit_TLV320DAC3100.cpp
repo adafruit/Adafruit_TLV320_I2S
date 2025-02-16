@@ -81,7 +81,11 @@ bool Adafruit_TLV320DAC3100::reset(void) {
   Adafruit_BusIO_Register reset_reg(i2c_dev, TLV320DAC3100_REG_RESET);
   Adafruit_BusIO_RegisterBits reset_bits(&reset_reg, 1, 0); // 1 bit, shift 0
   
-  return reset_bits.write(1);
+  if (! reset_bits.write(1) ) return false;
+
+  delay(10);
+
+  return (! reset_bits.read());
 }
 
 /*!
@@ -748,4 +752,708 @@ bool Adafruit_TLV320DAC3100::getDACFlags(bool *left_dac_powered, bool *hpl_power
   }
 
   return true;
+}
+
+/*!
+ * @brief Configure the INT1 interrupt sources
+ *
+ * @param headset_detect Enable headset detection interrupt
+ * @param button_press Enable button press detection interrupt
+ * @param dac_drc Enable DAC DRC signal power interrupt
+ * @param agc_noise Enable DAC data overflow interrupt
+ * @param over_current Enable short circuit interrupt
+ * @param multiple_pulse If true, INT1 generates multiple pulses until flag read
+ * @return true: success false: failure
+ */
+bool Adafruit_TLV320DAC3100::setInt1Source(bool headset_detect, bool button_press, 
+                                          bool dac_drc, bool agc_noise, 
+                                          bool over_current, bool multiple_pulse) {
+  uint8_t int_config = 0;
+  
+  if (!setPage(0)) {
+    return false;
+  }
+
+  if (headset_detect) int_config |= (1 << 7);
+  if (button_press)   int_config |= (1 << 6);
+  if (dac_drc)        int_config |= (1 << 5);
+  if (over_current)   int_config |= (1 << 3);
+  if (agc_noise)      int_config |= (1 << 2);
+  if (multiple_pulse) int_config |= (1 << 0);
+
+  Adafruit_BusIO_Register int1_ctrl = 
+    Adafruit_BusIO_Register(i2c_dev, TLV320DAC3100_REG_INT1_CTRL);
+    
+  return int1_ctrl.write(int_config);
+}
+
+/*!
+ * @brief Configure the INT2 interrupt sources
+ *
+ * @param headset_detect Enable headset detection interrupt
+ * @param button_press Enable button press detection interrupt
+ * @param dac_drc Enable DAC DRC signal power interrupt
+ * @param agc_noise Enable DAC data overflow interrupt
+ * @param over_current Enable short circuit interrupt
+ * @param multiple_pulse If true, INT2 generates multiple pulses until flag read
+ * @return true: success false: failure
+ */
+bool Adafruit_TLV320DAC3100::setInt2Source(bool headset_detect, bool button_press,
+                                          bool dac_drc, bool agc_noise,
+                                          bool over_current, bool multiple_pulse) {
+  uint8_t int_config = 0;
+  
+  if (!setPage(0)) {
+    return false;
+  }
+
+  if (headset_detect) int_config |= (1 << 7);
+  if (button_press)   int_config |= (1 << 6);
+  if (dac_drc)        int_config |= (1 << 5);
+  if (over_current)   int_config |= (1 << 3);
+  if (agc_noise)      int_config |= (1 << 2);
+  if (multiple_pulse) int_config |= (1 << 0);
+
+  Adafruit_BusIO_Register int2_ctrl = 
+    Adafruit_BusIO_Register(i2c_dev, TLV320DAC3100_REG_INT2_CTRL);
+    
+  return int2_ctrl.write(int_config);
+}
+
+
+/*!
+ * @brief Set the GPIO1 pin mode
+ *
+ * @param mode The GPIO1 pin mode/function
+ * @return true: success false: failure
+ */
+bool Adafruit_TLV320DAC3100::setGPIO1Mode(tlv320_gpio1_mode_t mode) {
+  if (!setPage(0)) {
+    return false;
+  }
+
+  Adafruit_BusIO_Register gpio1_ctrl = 
+    Adafruit_BusIO_Register(i2c_dev, TLV320DAC3100_REG_GPIO1_CTRL);
+  
+  Adafruit_BusIO_RegisterBits gpio1_mode =
+    Adafruit_BusIO_RegisterBits(&gpio1_ctrl, 4, 2);
+
+  return gpio1_mode.write(mode);
+}
+
+/*!
+ * @brief Set the GPIO1 output value (only valid in GPO mode)
+ *
+ * @param value The output value to set
+ * @return true: success false: failure
+ */
+bool Adafruit_TLV320DAC3100::setGPIO1Output(bool value) {
+  if (!setPage(0)) {
+    return false;
+  }
+
+  Adafruit_BusIO_Register gpio1_ctrl = 
+    Adafruit_BusIO_Register(i2c_dev, TLV320DAC3100_REG_GPIO1_CTRL);
+  
+  Adafruit_BusIO_RegisterBits gpio1_out =
+    Adafruit_BusIO_RegisterBits(&gpio1_ctrl, 1, 0);
+
+  return gpio1_out.write(value);
+}
+
+/*!
+ * @brief Get the current GPIO1 mode configuration
+ * 
+ * @return Current GPIO1 mode setting
+ */
+tlv320_gpio1_mode_t Adafruit_TLV320DAC3100::getGPIO1Mode() {
+  setPage(0);
+
+  Adafruit_BusIO_Register gpio1_ctrl = 
+    Adafruit_BusIO_Register(i2c_dev, TLV320DAC3100_REG_GPIO1_CTRL);
+  
+  Adafruit_BusIO_RegisterBits gpio1_mode =
+    Adafruit_BusIO_RegisterBits(&gpio1_ctrl, 4, 2);
+
+  return (tlv320_gpio1_mode_t)gpio1_mode.read();
+}
+
+/*!
+ * @brief Get the current GPIO1 input value
+ * 
+ * @return Current GPIO1 input state
+ */
+bool Adafruit_TLV320DAC3100::getGPIO1Input() {
+  Adafruit_BusIO_Register gpio1_ctrl = 
+    Adafruit_BusIO_Register(i2c_dev, TLV320DAC3100_REG_GPIO1_CTRL);
+  
+  Adafruit_BusIO_RegisterBits gpio1_in =
+    Adafruit_BusIO_RegisterBits(&gpio1_ctrl, 1, 1);
+
+  return gpio1_in.read();
+}
+
+
+bool Adafruit_TLV320DAC3100::setDINMode(tlv320_din_mode_t mode) {
+  if (!setPage(0)) {
+    return false;
+  }
+  
+  Adafruit_BusIO_Register din_ctrl = 
+    Adafruit_BusIO_Register(i2c_dev, TLV320DAC3100_REG_DIN_CTRL);
+  
+  Adafruit_BusIO_RegisterBits din_mode =
+    Adafruit_BusIO_RegisterBits(&din_ctrl, 2, 1);
+
+  return din_mode.write(mode);
+}
+
+tlv320_din_mode_t Adafruit_TLV320DAC3100::getDINMode() {
+  if (!setPage(0)) {
+    return TLV320_DIN_DISABLED;
+  }
+  
+  Adafruit_BusIO_Register din_ctrl = 
+    Adafruit_BusIO_Register(i2c_dev, TLV320DAC3100_REG_DIN_CTRL);
+  
+  Adafruit_BusIO_RegisterBits din_mode =
+    Adafruit_BusIO_RegisterBits(&din_ctrl, 2, 1);
+
+  return (tlv320_din_mode_t)din_mode.read();
+}
+
+bool Adafruit_TLV320DAC3100::getDINInput() {
+  if (!setPage(0)) {
+    return false;
+  }
+  
+  Adafruit_BusIO_Register din_ctrl = 
+    Adafruit_BusIO_Register(i2c_dev, TLV320DAC3100_REG_DIN_CTRL);
+  
+  Adafruit_BusIO_RegisterBits din_in =
+    Adafruit_BusIO_RegisterBits(&din_ctrl, 1, 0);
+
+  return din_in.read();
+}
+
+
+/*!
+ * @brief Set the DAC Processing Block selection (PRB_P1 through PRB_P25)
+ *
+ * @param block_number Processing block number (1-25)
+ * @return true: success false: failure or invalid input
+ */
+bool Adafruit_TLV320DAC3100::setDACProcessingBlock(uint8_t block_number) {
+  if (block_number < 1 || block_number > 25) {
+    return false;
+  }
+
+  if (!setPage(0)) {
+    return false;
+  }
+  
+  Adafruit_BusIO_Register dac_block = 
+    Adafruit_BusIO_Register(i2c_dev, TLV320DAC3100_REG_DAC_PRB);
+  
+  Adafruit_BusIO_RegisterBits block_select =
+    Adafruit_BusIO_RegisterBits(&dac_block, 5, 0);
+
+  return block_select.write(block_number);
+}
+
+/*!
+ * @brief Get the current DAC Processing Block selection
+ * 
+ * @return Current block number (1-25), 0 if read fails
+ */
+uint8_t Adafruit_TLV320DAC3100::getDACProcessingBlock() {
+  if (!setPage(0)) {
+    return 0;
+  }
+  
+  Adafruit_BusIO_Register dac_block = 
+    Adafruit_BusIO_Register(i2c_dev, TLV320DAC3100_REG_DAC_PRB);
+  
+  Adafruit_BusIO_RegisterBits block_select =
+    Adafruit_BusIO_RegisterBits(&dac_block, 5, 0);
+
+  return block_select.read();
+}
+
+
+
+/*!
+ * @brief Configure the DAC data path settings
+ *
+ * @param left_dac_on Power up left DAC
+ * @param right_dac_on Power up right DAC
+ * @param left_path Left channel data path configuration
+ * @param right_path Right channel data path configuration
+ * @param volume_step Volume control soft stepping configuration
+ * @return true: success false: failure
+ */
+bool Adafruit_TLV320DAC3100::setDACDataPath(bool left_dac_on, bool right_dac_on,
+                                           tlv320_dac_path_t left_path, 
+                                           tlv320_dac_path_t right_path,
+                                           tlv320_volume_step_t volume_step) {
+  if (!setPage(0)) {
+    return false;
+  }
+
+  Adafruit_BusIO_Register dac_path = 
+    Adafruit_BusIO_Register(i2c_dev, TLV320DAC3100_REG_DAC_DATAPATH);
+
+  Adafruit_BusIO_RegisterBits left_power =
+    Adafruit_BusIO_RegisterBits(&dac_path, 1, 7);
+  Adafruit_BusIO_RegisterBits right_power =
+    Adafruit_BusIO_RegisterBits(&dac_path, 1, 6);
+  Adafruit_BusIO_RegisterBits left_data =
+    Adafruit_BusIO_RegisterBits(&dac_path, 2, 4);
+  Adafruit_BusIO_RegisterBits right_data =
+    Adafruit_BusIO_RegisterBits(&dac_path, 2, 2);
+  Adafruit_BusIO_RegisterBits vol_step =
+    Adafruit_BusIO_RegisterBits(&dac_path, 2, 0);
+
+  if (!left_power.write(left_dac_on)) return false;
+  if (!right_power.write(right_dac_on)) return false;
+  if (!left_data.write(left_path)) return false;
+  if (!right_data.write(right_path)) return false;
+  return vol_step.write(volume_step);
+}
+
+/*!
+ * @brief Get the current DAC data path configuration
+ *
+ * @param left_dac_on Pointer to store left DAC power state
+ * @param right_dac_on Pointer to store right DAC power state
+ * @param left_path Pointer to store left channel data path configuration
+ * @param right_path Pointer to store right channel data path configuration
+ * @param volume_step Pointer to store volume stepping configuration
+ * @return true: success false: failure
+ */
+bool Adafruit_TLV320DAC3100::getDACDataPath(bool *left_dac_on, bool *right_dac_on,
+                                           tlv320_dac_path_t *left_path, 
+                                           tlv320_dac_path_t *right_path,
+                                           tlv320_volume_step_t *volume_step) {
+  if (!setPage(0)) {
+    return false;
+  }
+
+  Adafruit_BusIO_Register dac_path = 
+    Adafruit_BusIO_Register(i2c_dev, TLV320DAC3100_REG_DAC_DATAPATH);
+
+  Adafruit_BusIO_RegisterBits left_power =
+    Adafruit_BusIO_RegisterBits(&dac_path, 1, 7);
+  Adafruit_BusIO_RegisterBits right_power =
+    Adafruit_BusIO_RegisterBits(&dac_path, 1, 6);
+  Adafruit_BusIO_RegisterBits left_data =
+    Adafruit_BusIO_RegisterBits(&dac_path, 2, 4);
+  Adafruit_BusIO_RegisterBits right_data =
+    Adafruit_BusIO_RegisterBits(&dac_path, 2, 2);
+  Adafruit_BusIO_RegisterBits vol_step =
+    Adafruit_BusIO_RegisterBits(&dac_path, 2, 0);
+
+  if (left_dac_on) *left_dac_on = left_power.read();
+  if (right_dac_on) *right_dac_on = right_power.read();
+  if (left_path) *left_path = (tlv320_dac_path_t)left_data.read();
+  if (right_path) *right_path = (tlv320_dac_path_t)right_data.read();
+  if (volume_step) *volume_step = (tlv320_volume_step_t)vol_step.read();
+
+  return true;
+}
+
+
+/*!
+ * @brief Configure the DAC volume control settings
+ *
+ * @param left_mute Mute left DAC channel
+ * @param right_mute Mute right DAC channel
+ * @param control Volume control configuration
+ * @return true: success false: failure
+ */
+bool Adafruit_TLV320DAC3100::setDACVolumeControl(bool left_mute, bool right_mute,
+                                                 tlv320_vol_control_t control) {
+  if (!setPage(0)) {
+    return false;
+  }
+
+  Adafruit_BusIO_Register vol_ctrl = 
+    Adafruit_BusIO_Register(i2c_dev, TLV320DAC3100_REG_DAC_VOL_CTRL);
+
+  Adafruit_BusIO_RegisterBits left_mute_bit =
+    Adafruit_BusIO_RegisterBits(&vol_ctrl, 1, 3);
+  Adafruit_BusIO_RegisterBits right_mute_bit =
+    Adafruit_BusIO_RegisterBits(&vol_ctrl, 1, 2);
+  Adafruit_BusIO_RegisterBits vol_ctrl_bits =
+    Adafruit_BusIO_RegisterBits(&vol_ctrl, 2, 0);
+
+  if (!left_mute_bit.write(left_mute)) return false;
+  if (!right_mute_bit.write(right_mute)) return false;
+  return vol_ctrl_bits.write(control);
+}
+
+/*!
+ * @brief Get the current DAC volume control configuration
+ *
+ * @param left_mute Pointer to store left channel mute state
+ * @param right_mute Pointer to store right channel mute state
+ * @param control Pointer to store volume control configuration
+ * @return true: success false: failure
+ */
+bool Adafruit_TLV320DAC3100::getDACVolumeControl(bool *left_mute, bool *right_mute,
+                                                 tlv320_vol_control_t *control) {
+  if (!setPage(0)) {
+    return false;
+  }
+
+  Adafruit_BusIO_Register vol_ctrl = 
+    Adafruit_BusIO_Register(i2c_dev, TLV320DAC3100_REG_DAC_VOL_CTRL);
+
+  Adafruit_BusIO_RegisterBits left_mute_bit =
+    Adafruit_BusIO_RegisterBits(&vol_ctrl, 1, 3);
+  Adafruit_BusIO_RegisterBits right_mute_bit =
+    Adafruit_BusIO_RegisterBits(&vol_ctrl, 1, 2);
+  Adafruit_BusIO_RegisterBits vol_ctrl_bits =
+    Adafruit_BusIO_RegisterBits(&vol_ctrl, 2, 0);
+
+  if (left_mute) *left_mute = left_mute_bit.read();
+  if (right_mute) *right_mute = right_mute_bit.read();
+  if (control) *control = (tlv320_vol_control_t)vol_ctrl_bits.read();
+
+  return true;
+}
+
+
+/*!
+ * @brief Set DAC channel volume in dB
+ *
+ * @param right_channel true for right channel, false for left channel
+ * @param dB Volume in dB (-63.5 to +24 dB)
+ * @return true: success false: failure or invalid input
+ */
+bool Adafruit_TLV320DAC3100::setChannelVolume(bool right_channel, float dB) {
+  if (!setPage(0)) {
+    return false;
+  }
+
+  // Constrain input to valid range
+  if (dB > 24.0) dB = 24.0;
+  if (dB < -63.5) dB = -63.5;
+  
+  // Convert to half-dB steps
+  int8_t steps = (int8_t)(dB * 2);
+  
+  // 0dB = 0x00, +0.5dB = 0x01, -0.5dB = 0xFF, etc
+  uint8_t reg_val;
+  if (steps >= 0) {
+    reg_val = steps;
+  } else {
+    reg_val = 256 + steps; // Convert negative to two's complement
+  }
+  
+  // Check for reserved values
+  if (reg_val == 0x80 || reg_val > 0x30) {
+    return false;
+  }
+
+  Adafruit_BusIO_Register vol_ctrl = 
+    Adafruit_BusIO_Register(i2c_dev, right_channel ? 
+                           TLV320DAC3100_REG_DAC_RVOL : TLV320DAC3100_REG_DAC_LVOL);
+
+  return vol_ctrl.write(reg_val);
+}
+
+/*!
+ * @brief Get DAC channel volume in dB
+ *
+ * @param right_channel true for right channel, false for left channel
+ * @return Current volume in dB
+ */
+float Adafruit_TLV320DAC3100::getChannelVolume(bool right_channel) {
+  if (!setPage(0)) {
+    return 0.0;
+  }
+
+  Adafruit_BusIO_Register vol_ctrl = 
+    Adafruit_BusIO_Register(i2c_dev, right_channel ? 
+                           TLV320DAC3100_REG_DAC_RVOL : TLV320DAC3100_REG_DAC_LVOL);
+
+  uint8_t reg_val;
+  if (!vol_ctrl.read(&reg_val)) {
+    return 0.0;
+  }
+
+  // Convert from two's complement to signed value
+  int8_t steps;
+  if (reg_val & 0x80) {
+    steps = (int8_t)(reg_val - 256);
+  } else {
+    steps = (int8_t)reg_val;
+  }
+
+  // Convert half-steps to dB
+  return steps * 0.5;
+}
+
+/*!
+ * @brief Configure headset detection settings
+ *
+ * @param enable Enable headset detection
+ * @param detect_debounce Headset detection debounce time
+ * @param button_debounce Button press debounce time
+ * @return true: success false: failure
+ */
+bool Adafruit_TLV320DAC3100::setHeadsetDetect(bool enable, 
+                                             tlv320_detect_debounce_t detect_debounce,
+                                             tlv320_button_debounce_t button_debounce) {
+  if (!setPage(0)) {
+    return false;
+  }
+
+  Adafruit_BusIO_Register headset = 
+    Adafruit_BusIO_Register(i2c_dev, TLV320DAC3100_REG_HEADSET_DETECT);
+
+  Adafruit_BusIO_RegisterBits enable_bit =
+    Adafruit_BusIO_RegisterBits(&headset, 1, 7);
+  Adafruit_BusIO_RegisterBits detect_debounce_bits =
+    Adafruit_BusIO_RegisterBits(&headset, 3, 2);
+  Adafruit_BusIO_RegisterBits button_debounce_bits =
+    Adafruit_BusIO_RegisterBits(&headset, 2, 0);
+
+  if (!enable_bit.write(enable)) return false;
+  if (!detect_debounce_bits.write(detect_debounce)) return false;
+  return button_debounce_bits.write(button_debounce);
+}
+
+/*!
+ * @brief Get current headset detection status
+ *
+ * @return Current headset status
+ */
+tlv320_headset_status_t Adafruit_TLV320DAC3100::getHeadsetStatus(void) {
+  if (!setPage(0)) {
+    return TLV320_HEADSET_NONE;
+  }
+
+  Adafruit_BusIO_Register headset = 
+    Adafruit_BusIO_Register(i2c_dev, TLV320DAC3100_REG_HEADSET_DETECT);
+
+  Adafruit_BusIO_RegisterBits status_bits =
+    Adafruit_BusIO_RegisterBits(&headset, 2, 5);
+
+  return (tlv320_headset_status_t)status_bits.read();
+}
+
+
+
+/*!
+ * @brief Set beep volume for left and right channels
+ *
+ * @param left_dB Left channel volume (+2 to -61 dB)
+ * @param right_dB Right channel volume (+2 to -61 dB), if -100 matches left
+ * @return true: success false: failure
+ */
+bool Adafruit_TLV320DAC3100::setBeepVolume(int8_t left_dB, int8_t right_dB) {
+  if (!setPage(0)) {
+    return false;
+  }
+
+  // Constrain volumes
+  if (left_dB > 2) left_dB = 2;
+  if (left_dB < -61) left_dB = -61;
+  
+  // Convert to register values (2dB = 0x00, -61dB = 0x3F)
+  uint8_t left_reg = (uint8_t)(-left_dB + 2);
+  
+  bool match_volumes = (right_dB == -100);
+  if (match_volumes) {
+    right_dB = left_dB;
+  }
+  if (right_dB > 2) right_dB = 2;
+  if (right_dB < -61) right_dB = -61;
+  uint8_t right_reg = (uint8_t)(-right_dB + 2);
+
+  Adafruit_BusIO_Register beep_l = 
+    Adafruit_BusIO_Register(i2c_dev, TLV320DAC3100_REG_BEEP_L);
+  Adafruit_BusIO_Register beep_r = 
+    Adafruit_BusIO_Register(i2c_dev, TLV320DAC3100_REG_BEEP_R);
+
+  Adafruit_BusIO_RegisterBits left_vol =
+    Adafruit_BusIO_RegisterBits(&beep_l, 6, 0);
+  Adafruit_BusIO_RegisterBits right_vol =
+    Adafruit_BusIO_RegisterBits(&beep_r, 6, 0);
+  Adafruit_BusIO_RegisterBits vol_ctrl =
+    Adafruit_BusIO_RegisterBits(&beep_r, 2, 6);
+
+  if (!left_vol.write(left_reg)) return false;
+  if (!right_vol.write(right_reg)) return false;
+  
+  // Set volume control mode
+  return vol_ctrl.write(match_volumes ? 0b01 : 0b00);
+}
+
+
+/*!
+ * @brief Set beep length in samples
+ *
+ * @param samples Number of samples to generate beep (24-bit value)
+ * @return true: success false: failure
+ */
+bool Adafruit_TLV320DAC3100::setBeepLength(uint32_t samples) {
+  if (!setPage(0)) {
+    return false;
+  }
+
+  // Limit to 24-bit value
+  samples &= 0x00FFFFFF;
+
+  Adafruit_BusIO_Register beep_msb = 
+    Adafruit_BusIO_Register(i2c_dev, TLV320DAC3100_REG_BEEP_LEN_MSB);
+  Adafruit_BusIO_Register beep_mid = 
+    Adafruit_BusIO_Register(i2c_dev, TLV320DAC3100_REG_BEEP_LEN_MID);
+  Adafruit_BusIO_Register beep_lsb = 
+    Adafruit_BusIO_Register(i2c_dev, TLV320DAC3100_REG_BEEP_LEN_LSB);
+
+  if (!beep_msb.write(samples >> 16)) return false;
+  if (!beep_mid.write(samples >> 8)) return false;
+  return beep_lsb.write(samples);
+}
+
+
+/*!
+ * @brief Set beep sine and cosine values for frequency generation
+ *
+ * @param sin_val 16-bit sine value for sin(2p × fin / fS)
+ * @param cos_val 16-bit cosine value for cos(2p × fin / fS)
+ * @return true: success false: failure
+ */
+bool Adafruit_TLV320DAC3100::setBeepSinCos(uint16_t sin_val, uint16_t cos_val) {
+  if (!setPage(0)) {
+    return false;
+  }
+
+  Adafruit_BusIO_Register beep_sin_msb = 
+    Adafruit_BusIO_Register(i2c_dev, TLV320DAC3100_REG_BEEP_SIN_MSB);
+  Adafruit_BusIO_Register beep_sin_lsb = 
+    Adafruit_BusIO_Register(i2c_dev, TLV320DAC3100_REG_BEEP_SIN_LSB);
+  Adafruit_BusIO_Register beep_cos_msb = 
+    Adafruit_BusIO_Register(i2c_dev, TLV320DAC3100_REG_BEEP_COS_MSB);
+  Adafruit_BusIO_Register beep_cos_lsb = 
+    Adafruit_BusIO_Register(i2c_dev, TLV320DAC3100_REG_BEEP_COS_LSB);
+
+  if (!beep_sin_msb.write(sin_val >> 8)) return false;
+  if (!beep_sin_lsb.write(sin_val & 0xFF)) return false;
+  if (!beep_cos_msb.write(cos_val >> 8)) return false;
+  return beep_cos_lsb.write(cos_val & 0xFF);
+}
+
+
+/*!
+ * @brief Configure the Volume/MicDet pin ADC
+ *
+ * @param pin_control Enable pin control of DAC volume
+ * @param use_mclk Use MCLK instead of internal RC oscillator
+ * @param hysteresis ADC hysteresis setting
+ * @param rate ADC sampling rate
+ * @return true: success false: failure
+ */
+bool Adafruit_TLV320DAC3100::configVolADC(bool pin_control, bool use_mclk,
+                                                tlv320_vol_hyst_t hysteresis,
+                                                tlv320_vol_rate_t rate) {
+  if (!setPage(0)) {
+    return false;
+  }
+
+  Adafruit_BusIO_Register vol_adc = 
+    Adafruit_BusIO_Register(i2c_dev, TLV320DAC3100_REG_VOL_ADC_CTRL);
+
+  Adafruit_BusIO_RegisterBits pin_ctrl =
+    Adafruit_BusIO_RegisterBits(&vol_adc, 1, 7);
+  Adafruit_BusIO_RegisterBits clk_src =
+    Adafruit_BusIO_RegisterBits(&vol_adc, 1, 6);
+  Adafruit_BusIO_RegisterBits hyst_bits =
+    Adafruit_BusIO_RegisterBits(&vol_adc, 2, 4);
+  Adafruit_BusIO_RegisterBits rate_bits =
+    Adafruit_BusIO_RegisterBits(&vol_adc, 3, 0);
+
+  if (!pin_ctrl.write(pin_control)) return false;
+  if (!clk_src.write(use_mclk)) return false;
+  if (!hyst_bits.write(hysteresis)) return false;
+  return rate_bits.write(rate);
+}
+
+
+/*!
+ * @brief Read the current volume from the Volume ADC in dB
+ *
+ * @return Current volume in dB (+18 to -63 dB)
+ */
+float Adafruit_TLV320DAC3100::readVolADCdB(void) {
+  if (!setPage(0)) {
+    return 0.0;
+  }
+
+  Adafruit_BusIO_Register vol_adc = 
+    Adafruit_BusIO_Register(i2c_dev, TLV320DAC3100_REG_VOL_ADC_READ);
+
+  Adafruit_BusIO_RegisterBits vol_bits =
+    Adafruit_BusIO_RegisterBits(&vol_adc, 7, 0);
+
+  uint8_t raw_val = vol_bits.read();
+  
+  // Check for reserved value
+  if (raw_val == 0x7F) {
+    return 0.0;
+  }
+
+  // Convert register value to dB
+  // 0x00 = +18dB, 0x24 = 0dB, 0x7E = -63dB
+  if (raw_val <= 0x24) {
+    // Positive or zero dB range
+    return 18.0 - (raw_val * 0.5);
+  } else {
+    // Negative dB range
+    return -(raw_val - 0x24) * 0.5;
+  }
+}
+
+
+/*!
+ * @brief Configure speaker reset behavior on short circuit detection
+ *
+ * @param reset True to reset speaker on short circuit, false to remain unchanged
+ * @return true: success false: failure
+ */
+bool Adafruit_TLV320DAC3100::resetSpeakerOnSCD(bool reset) {
+  if (!setPage(1)) {
+    return false;
+  }
+
+  Adafruit_BusIO_Register err_ctl = 
+    Adafruit_BusIO_Register(i2c_dev, TLV320DAC3100_REG_HP_SPK_ERR_CTL);
+
+  Adafruit_BusIO_RegisterBits spk_reset =
+    Adafruit_BusIO_RegisterBits(&err_ctl, 1, 1);
+
+  return spk_reset.write(!reset);  // Register is inverse of parameter
+}
+
+/*!
+ * @brief Configure headphone reset behavior on short circuit detection
+ *
+ * @param reset True to reset headphone on short circuit, false to remain unchanged
+ * @return true: success false: failure
+ */
+bool Adafruit_TLV320DAC3100::resetHeadphoneOnSCD(bool reset) {
+  if (!setPage(1)) {
+    return false;
+  }
+
+  Adafruit_BusIO_Register err_ctl = 
+    Adafruit_BusIO_Register(i2c_dev, TLV320DAC3100_REG_HP_SPK_ERR_CTL);
+
+  Adafruit_BusIO_RegisterBits hp_reset =
+    Adafruit_BusIO_RegisterBits(&err_ctl, 1, 0);
+
+  return hp_reset.write(!reset);  // Register is inverse of parameter
 }
