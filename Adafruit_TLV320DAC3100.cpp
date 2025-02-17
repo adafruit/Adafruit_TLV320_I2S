@@ -461,7 +461,7 @@ bool Adafruit_TLV320DAC3100::setClockDividerInput(tlv320dac3100_cdiv_clkin_t clk
   }
 
   Adafruit_BusIO_Register mux_reg(i2c_dev, TLV320DAC3100_REG_CLKOUT_MUX);
-  Adafruit_BusIO_RegisterBits cdiv_bits(&mux_reg, 3, 3); // 3 bits, starting at bit 3
+  Adafruit_BusIO_RegisterBits cdiv_bits(&mux_reg, 3, 0); // 3 bits, starting at bit 0
   
   return cdiv_bits.write(clkin);
 }
@@ -1931,4 +1931,94 @@ bool Adafruit_TLV320DAC3100::configDelayDivider(bool use_mclk, uint8_t divider) 
 
   if (!clk_src.write(use_mclk)) return false;
   return div.write(divider);
+}
+
+
+/*!
+ * @brief Configure headphone driver settings
+ *
+ * @param left_powered Power up left headphone driver
+ * @param right_powered Power up right headphone driver
+ * @param common Common-mode voltage setting
+ * @param powerDownOnSCD Power down on short circuit (vs. current limiting)
+ * @return true: success false: failure
+ */
+bool Adafruit_TLV320DAC3100::configureHeadphoneDriver(bool left_powered, 
+                                                      bool right_powered,
+                                                      tlv320_hp_common_t common,
+                                                      bool powerDownOnSCD) {
+  if (!setPage(1)) {
+    return false;
+  }
+
+  Adafruit_BusIO_Register hp_ctrl = 
+    Adafruit_BusIO_Register(i2c_dev, TLV320DAC3100_REG_HP_DRIVERS);
+
+  Adafruit_BusIO_RegisterBits left_power =
+    Adafruit_BusIO_RegisterBits(&hp_ctrl, 1, 7);
+  Adafruit_BusIO_RegisterBits right_power =
+    Adafruit_BusIO_RegisterBits(&hp_ctrl, 1, 6);
+  Adafruit_BusIO_RegisterBits common_mode =
+    Adafruit_BusIO_RegisterBits(&hp_ctrl, 2, 3);
+  Adafruit_BusIO_RegisterBits scd_mode =
+    Adafruit_BusIO_RegisterBits(&hp_ctrl, 1, 1);
+
+  uint8_t reg_val = 0x04; // bit 2 must be 1
+  if (!left_power.write(left_powered)) return false;
+  if (!right_power.write(right_powered)) return false;
+  if (!common_mode.write(common)) return false;
+  return scd_mode.write(powerDownOnSCD);
+}
+
+
+/*!
+ * @brief Calculate and set PLL values for desired frequency
+ *
+ * @param mclk_freq MCLK input frequency in Hz
+ * @param desired_freq Desired PLL output frequency in Hz
+ * @param max_error Maximum allowed error (default 0.001 = 0.1%)
+ * @return true: success false: failure or invalid frequency
+ */
+bool Adafruit_TLV320DAC3100::configurePLL(uint32_t mclk_freq, uint32_t desired_freq, float max_error = 0.001) {
+  float ratio = (float)desired_freq / mclk_freq;
+  float best_error = 1.0;  // 100% error to start
+  uint8_t best_P = 1, best_R = 1, best_J = 0;
+  uint16_t best_D = 0;
+  
+  // Try different P & R values
+  for (uint8_t P = 1; P <= 8; P++) {
+    for (uint8_t R = 1; R <= 16; R++) {
+      float J_float = ratio * P * R;
+      if (J_float > 63) continue;
+      
+      uint8_t J = (uint8_t)J_float;
+      uint16_t D = (uint16_t)((J_float - J) * 2048);
+      if (D > 2047) continue;
+      
+      // Calculate actual frequency ratio this would give
+      float actual_ratio = (float)(J + (float)D/2048.0) / (P * R);
+      float error = fabs(actual_ratio - ratio) / ratio;
+      
+      // If this is better than our best so far, save it
+      if (error < best_error) {
+        best_error = error;
+        best_P = P;
+        best_R = R;
+        best_J = J;
+        best_D = D;
+        
+        // If we're within acceptable error, use these values
+        if (error <= max_error) {
+          return setPLLValues(P, R, J, D);
+        }
+      }
+    }
+  }
+  
+  // If we got here, use the best values we found
+  if (best_error < 0.1) {  // Accept up to 10% error rather than totally fail
+    return setPLLValues(best_P, best_R, best_J, best_D);
+  }
+  
+  return false;  // No acceptable values found
 }

@@ -216,6 +216,9 @@ public:
 
   bool configDelayDivider(bool use_mclk = true, uint8_t divider = 1);
 
+
+  bool configurePLL(uint32_t mclk_freq, uint32_t desired_freq, float max_error = 0.001);
+
 private:
   bool setPage(uint8_t page);
   uint8_t getPage(void);
