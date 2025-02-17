@@ -1457,3 +1457,478 @@ bool Adafruit_TLV320DAC3100::resetHeadphoneOnSCD(bool reset) {
 
   return hp_reset.write(!reset);  // Register is inverse of parameter
 }
+
+
+/*!
+ * @brief Enable or disable the Class-D speaker amplifier
+ *
+ * @param en True to enable, false to disable
+ * @return true: success false: failure
+ */
+bool Adafruit_TLV320DAC3100::enableSpeaker(bool en) {
+  if (!setPage(1)) {
+    return false;
+  }
+
+  Adafruit_BusIO_Register spk_amp = 
+    Adafruit_BusIO_Register(i2c_dev, TLV320DAC3100_REG_SPK_AMP);
+
+  Adafruit_BusIO_RegisterBits spk_en =
+    Adafruit_BusIO_RegisterBits(&spk_amp, 1, 7);
+
+  return spk_en.write(en);
+}
+
+
+/*!
+ * @brief Check if the Class-D speaker amplifier is enabled
+ *
+ * @return true if enabled, false if disabled
+ */
+bool Adafruit_TLV320DAC3100::speakerEnabled(void) {
+  if (!setPage(1)) {
+    return false;
+  }
+
+  Adafruit_BusIO_Register spk_amp = 
+    Adafruit_BusIO_Register(i2c_dev, TLV320DAC3100_REG_SPK_AMP);
+
+  Adafruit_BusIO_RegisterBits spk_en =
+    Adafruit_BusIO_RegisterBits(&spk_amp, 1, 7);
+
+  return spk_en.read();
+}
+
+/*!
+ * @brief Check if speaker short circuit is detected
+ *
+ * @return true if short circuit detected, false if not
+ */
+bool Adafruit_TLV320DAC3100::isSpeakerShorted(void) {
+  if (!setPage(1)) {
+    return false;
+  }
+
+  Adafruit_BusIO_Register spk_amp = 
+    Adafruit_BusIO_Register(i2c_dev, TLV320DAC3100_REG_SPK_AMP);
+
+  Adafruit_BusIO_RegisterBits short_detect =
+    Adafruit_BusIO_RegisterBits(&spk_amp, 1, 0);
+
+  return short_detect.read();
+}
+
+/*!
+ * @brief Configure headphone pop removal settings
+ *
+ * @param wait_for_powerdown Wait for amp powerdown before DAC powerdown
+ * @param powerup_time Driver power-on time
+ * @param ramp_time Driver ramp-up step time
+ * @return true: success false: failure
+ */
+bool Adafruit_TLV320DAC3100::configureHeadphonePop(bool wait_for_powerdown,
+                                                   tlv320_hp_time_t powerup_time,
+                                                   tlv320_ramp_time_t ramp_time) {
+  if (!setPage(1)) {
+    return false;
+  }
+
+  Adafruit_BusIO_Register hp_pop = 
+    Adafruit_BusIO_Register(i2c_dev, TLV320DAC3100_REG_HP_POP);
+
+  Adafruit_BusIO_RegisterBits powerdown_mode =
+    Adafruit_BusIO_RegisterBits(&hp_pop, 1, 7);
+  Adafruit_BusIO_RegisterBits power_time =
+    Adafruit_BusIO_RegisterBits(&hp_pop, 4, 3);
+  Adafruit_BusIO_RegisterBits ramp_step =
+    Adafruit_BusIO_RegisterBits(&hp_pop, 2, 1);
+
+  if (!powerdown_mode.write(wait_for_powerdown)) return false;
+  if (!power_time.write(powerup_time)) return false;
+  return ramp_step.write(ramp_time);
+}
+
+/*!
+ * @brief Set speaker power-up wait time
+ *
+ * @param wait_time Speaker power-up wait duration
+ * @return true: success false: failure
+ */
+bool Adafruit_TLV320DAC3100::setSpeakerWaitTime(tlv320_spk_wait_t wait_time) {
+  if (!setPage(1)) {
+    return false;
+  }
+
+  Adafruit_BusIO_Register pga_ramp = 
+    Adafruit_BusIO_Register(i2c_dev, TLV320DAC3100_REG_PGA_RAMP);
+
+  Adafruit_BusIO_RegisterBits wait_bits =
+    Adafruit_BusIO_RegisterBits(&pga_ramp, 3, 4);
+
+  return wait_bits.write(wait_time);
+}
+
+/*!
+ * @brief Configure DAC and analog input routing
+ *
+ * @param left_dac Left DAC routing
+ * @param right_dac Right DAC routing
+ * @param left_ain1 Route AIN1 to left mixer
+ * @param left_ain2 Route AIN2 to left mixer
+ * @param right_ain2 Route AIN2 to right mixer
+ * @param hpl_routed_to_hpr Route HPL output to HPR input (differential mode)
+ * @return true: success false: failure
+ */
+bool Adafruit_TLV320DAC3100::configureAnalogInputs(tlv320_dac_route_t left_dac,
+                                                 tlv320_dac_route_t right_dac,
+                                                 bool left_ain1, bool left_ain2,
+                                                 bool right_ain2, bool hpl_routed_to_hpr) {
+  if (!setPage(1)) {
+    return false;
+  }
+
+  Adafruit_BusIO_Register routing = 
+    Adafruit_BusIO_Register(i2c_dev, TLV320DAC3100_REG_OUT_ROUTING);
+
+  Adafruit_BusIO_RegisterBits left_dac_route =
+    Adafruit_BusIO_RegisterBits(&routing, 2, 6);
+  Adafruit_BusIO_RegisterBits left_ain1_route =
+    Adafruit_BusIO_RegisterBits(&routing, 1, 5);
+  Adafruit_BusIO_RegisterBits left_ain2_route =
+    Adafruit_BusIO_RegisterBits(&routing, 1, 4);
+  Adafruit_BusIO_RegisterBits right_dac_route =
+    Adafruit_BusIO_RegisterBits(&routing, 2, 2);
+  Adafruit_BusIO_RegisterBits right_ain2_route =
+    Adafruit_BusIO_RegisterBits(&routing, 1, 1);
+  Adafruit_BusIO_RegisterBits hpl_to_hpr =
+    Adafruit_BusIO_RegisterBits(&routing, 1, 0);
+
+  if (!left_dac_route.write(left_dac)) return false;
+  if (!left_ain1_route.write(left_ain1)) return false;
+  if (!left_ain2_route.write(left_ain2)) return false;
+  if (!right_dac_route.write(right_dac)) return false;
+  if (!right_ain2_route.write(right_ain2)) return false;
+  return hpl_to_hpr.write(hpl_routed_to_hpr);
+}
+
+
+/*!
+ * @brief Set HPL analog volume control
+ *
+ * @param route_enabled Enable routing to HPL output driver
+ * @param gain Gain value (0-127, see datasheet Table 6-24 for dB values)
+ * @return true: success false: failure
+ */
+bool Adafruit_TLV320DAC3100::setHPLVolume(bool route_enabled, uint8_t gain) {
+  if (!setPage(1)) {
+    return false;
+  }
+
+  Adafruit_BusIO_Register hpl_vol = 
+    Adafruit_BusIO_Register(i2c_dev, TLV320DAC3100_REG_HPL_VOL);
+
+  Adafruit_BusIO_RegisterBits route =
+    Adafruit_BusIO_RegisterBits(&hpl_vol, 1, 7);
+  Adafruit_BusIO_RegisterBits vol =
+    Adafruit_BusIO_RegisterBits(&hpl_vol, 7, 0);
+
+  // Constrain gain to valid range
+  if (gain > 0x7F) gain = 0x7F;
+
+  if (!route.write(route_enabled)) return false;
+  return vol.write(gain);
+}
+
+/*!
+ * @brief Set HPR analog volume control
+ *
+ * @param route_enabled Enable routing to HPR output driver
+ * @param gain Gain value (0-127, see datasheet Table 6-24 for dB values)
+ * @return true: success false: failure
+ */
+bool Adafruit_TLV320DAC3100::setHPRVolume(bool route_enabled, uint8_t gain) {
+  if (!setPage(1)) {
+    return false;
+  }
+
+  Adafruit_BusIO_Register hpr_vol = 
+    Adafruit_BusIO_Register(i2c_dev, TLV320DAC3100_REG_HPR_VOL);
+
+  Adafruit_BusIO_RegisterBits route =
+    Adafruit_BusIO_RegisterBits(&hpr_vol, 1, 7);
+  Adafruit_BusIO_RegisterBits vol =
+    Adafruit_BusIO_RegisterBits(&hpr_vol, 7, 0);
+
+  if (gain > 0x7F) gain = 0x7F;
+
+  if (!route.write(route_enabled)) return false;
+  return vol.write(gain);
+}
+
+/*!
+ * @brief Set Speaker analog volume control
+ *
+ * @param route_enabled Enable routing to class-D output driver
+ * @param gain Gain value (0-127, see datasheet Table 6-24 for dB values)
+ * @return true: success false: failure
+ */
+bool Adafruit_TLV320DAC3100::setSPKVolume(bool route_enabled, uint8_t gain) {
+  if (!setPage(1)) {
+    return false;
+  }
+
+  Adafruit_BusIO_Register spk_vol = 
+    Adafruit_BusIO_Register(i2c_dev, TLV320DAC3100_REG_SPK_VOL);
+
+  Adafruit_BusIO_RegisterBits route =
+    Adafruit_BusIO_RegisterBits(&spk_vol, 1, 7);
+  Adafruit_BusIO_RegisterBits vol =
+    Adafruit_BusIO_RegisterBits(&spk_vol, 7, 0);
+
+  if (gain > 0x7F) gain = 0x7F;
+
+  if (!route.write(route_enabled)) return false;
+  return vol.write(gain);
+}
+
+/*!
+ * @brief Configure HPL driver PGA settings
+ *
+ * @param gain_db PGA gain (0-9 dB)
+ * @param unmute True to unmute, false to mute
+ * @return true: success false: failure or invalid gain
+ */
+bool Adafruit_TLV320DAC3100::configureHPL_PGA(uint8_t gain_db, bool unmute) {
+  if (!setPage(1)) {
+    return false;
+  }
+
+  if (gain_db > 9) {
+    return false;
+  }
+
+  Adafruit_BusIO_Register hpl = 
+    Adafruit_BusIO_Register(i2c_dev, TLV320DAC3100_REG_HPL_DRIVER);
+
+  Adafruit_BusIO_RegisterBits gain =
+    Adafruit_BusIO_RegisterBits(&hpl, 4, 3);
+  Adafruit_BusIO_RegisterBits mute =
+    Adafruit_BusIO_RegisterBits(&hpl, 1, 2);
+
+  if (!gain.write(gain_db)) return false;
+  return mute.write(unmute);
+}
+
+/*!
+ * @brief Configure HPR driver PGA settings
+ *
+ * @param gain_db PGA gain (0-9 dB)
+ * @param unmute True to unmute, false to mute
+ * @return true: success false: failure or invalid gain
+ */
+bool Adafruit_TLV320DAC3100::configureHPR_PGA(uint8_t gain_db, bool unmute) {
+  if (!setPage(1)) {
+    return false;
+  }
+
+  if (gain_db > 9) {
+    return false;
+  }
+
+  Adafruit_BusIO_Register hpr = 
+    Adafruit_BusIO_Register(i2c_dev, TLV320DAC3100_REG_HPR_DRIVER);
+
+  Adafruit_BusIO_RegisterBits gain =
+    Adafruit_BusIO_RegisterBits(&hpr, 4, 3);
+  Adafruit_BusIO_RegisterBits mute =
+    Adafruit_BusIO_RegisterBits(&hpr, 1, 2);
+
+  if (!gain.write(gain_db)) return false;
+  return mute.write(unmute);
+}
+
+/*!
+ * @brief Configure Speaker driver settings
+ *
+ * @param gain Output stage gain setting
+ * @param unmute True to unmute, false to mute
+ * @return true: success false: failure
+ */
+bool Adafruit_TLV320DAC3100::configureSPK_PGA(tlv320_spk_gain_t gain, bool unmute) {
+  if (!setPage(1)) {
+    return false;
+  }
+
+  Adafruit_BusIO_Register spk = 
+    Adafruit_BusIO_Register(i2c_dev, TLV320DAC3100_REG_SPK_DRIVER);
+
+  Adafruit_BusIO_RegisterBits gain_bits =
+    Adafruit_BusIO_RegisterBits(&spk, 2, 3);
+  Adafruit_BusIO_RegisterBits mute =
+    Adafruit_BusIO_RegisterBits(&spk, 1, 2);
+
+  if (!gain_bits.write(gain)) return false;
+  return mute.write(unmute);
+}
+
+/*!
+ * @brief Check if all programmed gains have been applied to HPL
+ *
+ * @return true if gains applied, false if still ramping
+ */
+bool Adafruit_TLV320DAC3100::isHPLGainApplied(void) {
+  if (!setPage(1)) {
+    return false;
+  }
+
+  Adafruit_BusIO_Register hpl = 
+    Adafruit_BusIO_Register(i2c_dev, TLV320DAC3100_REG_HPL_DRIVER);
+
+  Adafruit_BusIO_RegisterBits applied =
+    Adafruit_BusIO_RegisterBits(&hpl, 1, 0);
+
+  return applied.read();
+}
+
+/*!
+ * @brief Check if all programmed gains have been applied to HPR
+ *
+ * @return true if gains applied, false if still ramping
+ */
+bool Adafruit_TLV320DAC3100::isHPRGainApplied(void) {
+  if (!setPage(1)) {
+    return false;
+  }
+
+  Adafruit_BusIO_Register hpr = 
+    Adafruit_BusIO_Register(i2c_dev, TLV320DAC3100_REG_HPR_DRIVER);
+
+  Adafruit_BusIO_RegisterBits applied =
+    Adafruit_BusIO_RegisterBits(&hpr, 1, 0);
+
+  return applied.read();
+}
+
+/*!
+ * @brief Check if all programmed gains have been applied to Speaker
+ *
+ * @return true if gains applied, false if still ramping
+ */
+bool Adafruit_TLV320DAC3100::isSPKGainApplied(void) {
+  if (!setPage(1)) {
+    return false;
+  }
+
+  Adafruit_BusIO_Register spk = 
+    Adafruit_BusIO_Register(i2c_dev, TLV320DAC3100_REG_SPK_DRIVER);
+
+  Adafruit_BusIO_RegisterBits applied =
+    Adafruit_BusIO_RegisterBits(&spk, 1, 0);
+
+  return applied.read();
+}
+
+
+/*!
+ * @brief Configure headphone outputs as line-out
+ *
+ * @param left Configure left channel as line-out
+ * @param right Configure right channel as line-out
+ * @return true: success false: failure
+ */
+bool Adafruit_TLV320DAC3100::headphoneLineout(bool left, bool right) {
+  if (!setPage(1)) {
+    return false;
+  }
+
+  Adafruit_BusIO_Register hp_ctrl = 
+    Adafruit_BusIO_Register(i2c_dev, TLV320DAC3100_REG_HP_DRIVER_CTRL);
+
+  Adafruit_BusIO_RegisterBits left_line =
+    Adafruit_BusIO_RegisterBits(&hp_ctrl, 1, 2);
+  Adafruit_BusIO_RegisterBits right_line =
+    Adafruit_BusIO_RegisterBits(&hp_ctrl, 1, 1);
+
+  if (!left_line.write(left)) return false;
+  return right_line.write(right);
+}
+
+
+/*!
+ * @brief Configure MICBIAS settings
+ *
+ * @param power_down Enable software power down
+ * @param always_on Keep MICBIAS on even without headset
+ * @param voltage MICBIAS voltage setting
+ * @return true: success false: failure
+ */
+bool Adafruit_TLV320DAC3100::configMicBias(bool power_down, bool always_on,
+                                          tlv320_micbias_volt_t voltage) {
+  if (!setPage(1)) {
+    return false;
+  }
+
+  Adafruit_BusIO_Register micbias = 
+    Adafruit_BusIO_Register(i2c_dev, TLV320DAC3100_REG_MICBIAS);
+
+  Adafruit_BusIO_RegisterBits powerdown =
+    Adafruit_BusIO_RegisterBits(&micbias, 1, 7);
+  Adafruit_BusIO_RegisterBits force_on =
+    Adafruit_BusIO_RegisterBits(&micbias, 1, 3);
+  Adafruit_BusIO_RegisterBits volt =
+    Adafruit_BusIO_RegisterBits(&micbias, 2, 0);
+
+  if (!powerdown.write(power_down)) return false;
+  if (!force_on.write(always_on)) return false;
+  return volt.write(voltage);
+}
+
+
+/*!
+ * @brief Configure analog input common mode connections
+ *
+ * @param ain1_cm Connect AIN1 to common mode when unused
+ * @param ain2_cm Connect AIN2 to common mode when unused
+ * @return true: success false: failure
+ */
+bool Adafruit_TLV320DAC3100::setInputCommonMode(bool ain1_cm, bool ain2_cm) {
+  if (!setPage(1)) {
+    return false;
+  }
+
+  Adafruit_BusIO_Register input_cm = 
+    Adafruit_BusIO_Register(i2c_dev, TLV320DAC3100_REG_INPUT_CM);
+
+  Adafruit_BusIO_RegisterBits ain1 =
+    Adafruit_BusIO_RegisterBits(&input_cm, 1, 7);
+  Adafruit_BusIO_RegisterBits ain2 =
+    Adafruit_BusIO_RegisterBits(&input_cm, 1, 6);
+
+  if (!ain1.write(ain1_cm)) return false;
+  return ain2.write(ain2_cm);
+}
+
+
+/*!
+ * @brief Configure programmable delay timer clock source and divider
+ *
+ * @param use_mclk True to use external MCLK, false for internal oscillator
+ * @param divider Clock divider (1-127, or 0 for 128)
+ * @return true: success false: failure
+ */
+bool Adafruit_TLV320DAC3100::configDelayDivider(bool use_mclk, uint8_t divider) {
+  if (!setPage(3)) {
+    return false;
+  }
+
+  Adafruit_BusIO_Register timer = 
+    Adafruit_BusIO_Register(i2c_dev, TLV320DAC3100_REG_TIMER_MCLK_DIV);
+
+  Adafruit_BusIO_RegisterBits clk_src =
+    Adafruit_BusIO_RegisterBits(&timer, 1, 7);
+  Adafruit_BusIO_RegisterBits div =
+    Adafruit_BusIO_RegisterBits(&timer, 7, 0);
+
+  if (!clk_src.write(use_mclk)) return false;
+  return div.write(divider);
+}
