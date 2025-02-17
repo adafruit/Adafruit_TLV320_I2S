@@ -19,6 +19,7 @@
 #include <Adafruit_I2CDevice.h>
 #include <Arduino.h>
 #include <Wire.h>
+#include "Adafruit_TLV320DAC3100_typedefs.h"
 
 #define TLV320DAC3100_I2CADDR_DEFAULT 0x18 ///< Default I2C address
 
