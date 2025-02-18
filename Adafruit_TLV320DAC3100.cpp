@@ -545,8 +545,8 @@ bool Adafruit_TLV320DAC3100::getCLKOUT_M(bool *enabled, uint8_t *val) {
  */
 bool Adafruit_TLV320DAC3100::setCodecInterface(tlv320dac3100_format_t format, 
                                               tlv320dac3100_data_len_t len,
-                                              bool bclk_out = false,
-                                              bool wclk_out = false) {
+                                              bool bclk_out,
+                                              bool wclk_out) {
   if (!setPage(0)) {
     return false;
   }
@@ -1979,7 +1979,7 @@ bool Adafruit_TLV320DAC3100::configureHeadphoneDriver(bool left_powered,
  * @param max_error Maximum allowed error (default 0.001 = 0.1%)
  * @return true: success false: failure or invalid frequency
  */
-bool Adafruit_TLV320DAC3100::configurePLL(uint32_t mclk_freq, uint32_t desired_freq, float max_error = 0.001) {
+bool Adafruit_TLV320DAC3100::configurePLL(uint32_t mclk_freq, uint32_t desired_freq, float max_error) {
   float ratio = (float)desired_freq / mclk_freq;
   float best_error = 1.0;  // 100% error to start
   uint8_t best_P = 1, best_R = 1, best_J = 0;
@@ -2021,4 +2021,46 @@ bool Adafruit_TLV320DAC3100::configurePLL(uint32_t mclk_freq, uint32_t desired_f
   }
   
   return false;  // No acceptable values found
+}
+
+  /*!
+   * @brief Validate PLL configuration parameters
+   * 
+   * @param P PLL divider (1-8)
+   * @param R PLL multiplier (1-16)
+   * @param J PLL multiplier (1-63)
+   * @param D PLL fractional multiplier (0-2047)
+   * @param pll_clkin Input clock frequency in Hz
+   * @return true if configuration is valid, false if not
+   */
+bool Adafruit_TLV320DAC3100::validatePLLConfig(uint8_t P, uint8_t R, uint8_t J, 
+                                              uint16_t D, float pll_clkin) {
+  float pll_in_div_p = pll_clkin / P;
+  float jd = J + (float)D/2048.0;
+  float pll_out = (pll_clkin * jd * R) / P;
+  
+  if (D == 0) {
+    // Check D=0 constraints
+    if (pll_in_div_p < 512000 || pll_in_div_p > 20000000) {
+      return false;  // PLL_CLKIN/P out of range (512kHz-20MHz)
+    }
+    if (pll_out < 80000000 || pll_out > 110000000) {
+      return false;  // PLL output out of range (80-110MHz)
+    }
+    if ((R * J) < 4 || (R * J) > 259) {
+      return false;  // R*J out of range (4-259)
+    }
+  } else {
+    // Check D?0 constraints
+    if (pll_in_div_p < 10000000 || pll_in_div_p > 20000000) {
+      return false;  // PLL_CLKIN/P out of range (10-20MHz)
+    }
+    if (pll_out < 80000000 || pll_out > 110000000) {
+      return false;  // PLL output out of range (80-110MHz)
+    }
+    if (R != 1) {
+      return false;  // R must be 1 when D?0
+    }
+  }
+  return true;
 }

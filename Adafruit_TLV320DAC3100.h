@@ -125,6 +125,7 @@ public:
   bool getBCLKoffset(uint8_t *offset);
   bool setBCLK_N(bool enable, uint8_t val);
   bool getBCLK_N(bool *enabled, uint8_t *val);
+  bool validatePLLConfig(uint8_t P, uint8_t R, uint8_t J, uint16_t D, float pll_clkin);
 
   bool setCodecInterface(tlv320dac3100_format_t format, 
                         tlv320dac3100_data_len_t len,
