@@ -1140,19 +1140,11 @@ bool Adafruit_TLV320DAC3100::setChannelVolume(bool right_channel, float dB) {
   if (dB > 24.0) dB = 24.0;
   if (dB < -63.5) dB = -63.5;
   
-  // Convert to half-dB steps
-  int8_t steps = (int8_t)(dB * 2);
-  
-  // 0dB = 0x00, +0.5dB = 0x01, -0.5dB = 0xFF, etc
-  uint8_t reg_val;
-  if (steps >= 0) {
-    reg_val = steps;
-  } else {
-    reg_val = 256 + steps; // Convert negative to two's complement
-  }
-  
+  int8_t reg_val;
+  reg_val = dB * 2;
+
   // Check for reserved values
-  if (reg_val == 0x80 || reg_val > 0x30) {
+  if ((reg_val == 0x80) || (reg_val > 0x30)) {
     return false;
   }
 
@@ -1583,12 +1575,20 @@ bool Adafruit_TLV320DAC3100::configureAnalogInputs(tlv320_dac_route_t left_dac,
                                                  tlv320_dac_route_t right_dac,
                                                  bool left_ain1, bool left_ain2,
                                                  bool right_ain2, bool hpl_routed_to_hpr) {
+  Serial.print("Left DAC route value: 0x"); Serial.println(left_dac, HEX);
+  Serial.print("Right DAC route value: 0x"); Serial.println(right_dac, HEX);
+
   if (!setPage(1)) {
     return false;
   }
 
   Adafruit_BusIO_Register routing = 
     Adafruit_BusIO_Register(i2c_dev, TLV320DAC3100_REG_OUT_ROUTING);
+
+  // Read initial value
+  uint8_t initial = routing.read();
+  Serial.print("Initial routing reg: 0x"); Serial.println(initial, HEX);
+
 
   Adafruit_BusIO_RegisterBits left_dac_route =
     Adafruit_BusIO_RegisterBits(&routing, 2, 6);
@@ -1608,7 +1608,13 @@ bool Adafruit_TLV320DAC3100::configureAnalogInputs(tlv320_dac_route_t left_dac,
   if (!left_ain2_route.write(left_ain2)) return false;
   if (!right_dac_route.write(right_dac)) return false;
   if (!right_ain2_route.write(right_ain2)) return false;
-  return hpl_to_hpr.write(hpl_routed_to_hpr);
+  if (!hpl_to_hpr.write(hpl_routed_to_hpr)) return false;
+
+  // Read final value
+  uint8_t final = routing.read();
+  Serial.print("Final routing reg: 0x"); Serial.println(final, HEX);
+
+  return true;
 }
 
 
@@ -2064,3 +2070,9 @@ bool Adafruit_TLV320DAC3100::validatePLLConfig(uint8_t P, uint8_t R, uint8_t J,
   }
   return true;
 }
+
+  uint8_t Adafruit_TLV320DAC3100::readRegister(uint8_t page, uint8_t reg) {
+    setPage(page);
+    Adafruit_BusIO_Register dac_reg = Adafruit_BusIO_Register(i2c_dev, reg);
+    return dac_reg.read();
+  }

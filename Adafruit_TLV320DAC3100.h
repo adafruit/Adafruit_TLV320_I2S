@@ -220,6 +220,9 @@ public:
 
   bool configurePLL(uint32_t mclk_freq, uint32_t desired_freq, float max_error = 0.001);
 
+
+  uint8_t readRegister(uint8_t page, uint8_t reg);
+
 private:
   bool setPage(uint8_t page);
   uint8_t getPage(void);
