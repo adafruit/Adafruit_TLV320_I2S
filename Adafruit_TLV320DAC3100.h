@@ -66,6 +66,7 @@
 #define TLV320DAC3100_REG_VOL_ADC_READ    0x75  ///< VOL/MICDET-Pin Gain Register
 
 // Page 1
+#define TLV320DAC3100_REG_BCLK_CTRL2 0x1D
 #define TLV320DAC3100_REG_HP_SPK_ERR_CTL  0x1E  ///< Headphone and Speaker Error Control Register
 #define TLV320DAC3100_REG_HP_DRIVERS  0x1F  ///< Headphone Drivers Register
 #define TLV320DAC3100_REG_SPK_AMP  0x20  ///< Class-D Speaker Amplifier Register
@@ -82,7 +83,16 @@
 #define TLV320DAC3100_REG_MICBIAS  0x2E  ///< MICBIAS Configuration Register
 #define TLV320DAC3100_REG_INPUT_CM  0x32  ///< Input Common Mode Settings Register
 #define TLV320DAC3100_REG_TIMER_MCLK_DIV  0x10  ///< Timer Clock MCLK Divider Register
+#define TLV320DAC3100_REG_IRQ_FLAGS_STICKY 0x2C  ///< Interrupt Flags - Sticky Register
+#define TLV320DAC3100_REG_IRQ_FLAGS        0x2E  ///< Interrupt Flags - DAC Register
 
+// IRQ Flag bits
+#define TLV320DAC3100_IRQ_HPL_SHORT      0x80  ///< Short circuit detected at HPL / left class-D driver
+#define TLV320DAC3100_IRQ_HPR_SHORT      0x40  ///< Short circuit detected at HPR / right class-D driver
+#define TLV320DAC3100_IRQ_BUTTON_PRESS   0x20  ///< Headset button pressed
+#define TLV320DAC3100_IRQ_HEADSET_DETECT 0x10  ///< Headset insertion detected (1) or removal detected (0)
+#define TLV320DAC3100_IRQ_LEFT_DRC       0x08  ///< Left DAC signal power greater than DRC threshold
+#define TLV320DAC3100_IRQ_RIGHT_DRC      0x04  ///< Right DAC signal power greater than DRC threshold
 
 /*!
  * @brief Class to interact with TLV320DAC3100 DAC
@@ -125,6 +135,9 @@ public:
   bool getBCLKoffset(uint8_t *offset);
   bool setBCLK_N(bool enable, uint8_t val);
   bool getBCLK_N(bool *enabled, uint8_t *val);
+  bool setBCLKConfig(bool invert_bclk, bool active_when_powered_down, tlv320dac3100_bclk_src_t source);
+  bool getBCLKConfig(bool *invert_bclk, bool *active_when_powered_down, tlv320dac3100_bclk_src_t *source);
+
   bool validatePLLConfig(uint8_t P, uint8_t R, uint8_t J, uint16_t D, float pll_clkin);
 
   bool setCodecInterface(tlv320dac3100_format_t format, 
@@ -173,9 +186,13 @@ public:
                        tlv320_button_debounce_t button_debounce = TLV320_BTN_DEBOUNCE_0MS);
   tlv320_headset_status_t getHeadsetStatus(void);
 
+  bool isBeeping(void);
+  bool enableBeep(bool enable);
   bool setBeepVolume(int8_t left_dB, int8_t right_dB = -100);  // -100 is sentinel value
   bool setBeepLength(uint32_t samples);
   bool setBeepSinCos(uint16_t sin_val, uint16_t cos_val);
+  bool configureBeepTone(float frequency, uint32_t duration_ms, uint32_t sample_rate);
+
   bool configVolADC(bool pin_control, bool use_mclk, 
                          tlv320_vol_hyst_t hysteresis,
                          tlv320_vol_rate_t rate);
@@ -219,6 +236,9 @@ public:
 
 
   bool configurePLL(uint32_t mclk_freq, uint32_t desired_freq, float max_error = 0.001);
+
+
+  uint8_t readIRQflags(bool sticky = false);
 
 
   uint8_t readRegister(uint8_t page, uint8_t reg);

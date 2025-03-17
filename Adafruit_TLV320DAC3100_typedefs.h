@@ -244,3 +244,9 @@ typedef enum {
   TLV320_SPK_GAIN_18DB = 0b10,  ///< 18 dB gain
   TLV320_SPK_GAIN_24DB = 0b11,  ///< 24 dB gain
 } tlv320_spk_gain_t;
+
+
+typedef enum {
+  TLV320DAC3100_BCLK_SRC_DAC_CLK = 0,
+  TLV320DAC3100_BCLK_SRC_DAC_MOD_CLK = 1,
+} tlv320dac3100_bclk_src_t;

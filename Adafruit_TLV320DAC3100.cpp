@@ -692,6 +692,71 @@ bool Adafruit_TLV320DAC3100::getBCLK_N(bool *enabled, uint8_t *val) {
 }
 
 
+
+
+/*!
+* @brief Configure the BCLK interface settings
+* 
+* @param invert_bclk Whether to invert the BCLK signal
+* @param active_when_powered_down Keep BCLK and WCLK active when codec powered down
+* @param source Select BCLK input source (DAC_CLK or DAC_MOD_CLK)
+* @return true: success, false: failure
+*/
+bool Adafruit_TLV320DAC3100::setBCLKConfig(bool invert_bclk, 
+                                          bool active_when_powered_down,
+                                          tlv320dac3100_bclk_src_t source) {
+  if (!setPage(0)) {
+    return false;
+  }
+
+  Adafruit_BusIO_Register reg = Adafruit_BusIO_Register(i2c_dev, TLV320DAC3100_REG_BCLK_CTRL2);
+  Adafruit_BusIO_RegisterBits bclk_invert = Adafruit_BusIO_RegisterBits(&reg, 1, 3);
+  Adafruit_BusIO_RegisterBits bclk_active_pd = Adafruit_BusIO_RegisterBits(&reg, 1, 2);
+  Adafruit_BusIO_RegisterBits bclk_src = Adafruit_BusIO_RegisterBits(&reg, 2, 0);
+
+  if (!bclk_invert.write(invert_bclk) ||
+      !bclk_active_pd.write(active_when_powered_down) ||
+      !bclk_src.write(source)) {
+    return false;
+  }
+
+  return true;
+}
+
+/*!
+* @brief Get the current BCLK interface settings
+* 
+* @param invert_bclk Pointer to store BCLK inversion state
+* @param active_when_powered_down Pointer to store BCLK active state during power down
+* @param source Pointer to store BCLK source setting
+* @return true: success, false: failure
+*/
+bool Adafruit_TLV320DAC3100::getBCLKConfig(bool *invert_bclk,
+                                          bool *active_when_powered_down,
+                                          tlv320dac3100_bclk_src_t *source) {
+  if (!setPage(0)) {
+    return false;
+  }
+
+  Adafruit_BusIO_Register reg = Adafruit_BusIO_Register(i2c_dev, TLV320DAC3100_REG_BCLK_CTRL2);
+  Adafruit_BusIO_RegisterBits bclk_invert = Adafruit_BusIO_RegisterBits(&reg, 1, 3);
+  Adafruit_BusIO_RegisterBits bclk_active_pd = Adafruit_BusIO_RegisterBits(&reg, 1, 2);
+  Adafruit_BusIO_RegisterBits bclk_src = Adafruit_BusIO_RegisterBits(&reg, 2, 0);
+
+  if (invert_bclk) {
+    *invert_bclk = bclk_invert.read();
+  }
+  if (active_when_powered_down) {
+    *active_when_powered_down = bclk_active_pd.read();
+  }
+  if (source) {
+    *source = (tlv320dac3100_bclk_src_t)bclk_src.read();
+  }
+
+  return true;
+}
+
+
 /*!
  * @brief Get the DAC and output driver status flags
  * @param left_dac_powered Pointer to store Left DAC power status, or NULL
@@ -1315,8 +1380,8 @@ bool Adafruit_TLV320DAC3100::setBeepLength(uint32_t samples) {
 /*!
  * @brief Set beep sine and cosine values for frequency generation
  *
- * @param sin_val 16-bit sine value for sin(2p × fin / fS)
- * @param cos_val 16-bit cosine value for cos(2p × fin / fS)
+ * @param sin_val 16-bit sine value for sin(2p ï¿½ fin / fS)
+ * @param cos_val 16-bit cosine value for cos(2p ï¿½ fin / fS)
  * @return true: success false: failure
  */
 bool Adafruit_TLV320DAC3100::setBeepSinCos(uint16_t sin_val, uint16_t cos_val) {
@@ -2016,16 +2081,16 @@ bool Adafruit_TLV320DAC3100::configurePLL(uint32_t mclk_freq, uint32_t desired_f
   return false;  // No acceptable values found
 }
 
-  /*!
-   * @brief Validate PLL configuration parameters
-   * 
-   * @param P PLL divider (1-8)
-   * @param R PLL multiplier (1-16)
-   * @param J PLL multiplier (1-63)
-   * @param D PLL fractional multiplier (0-2047)
-   * @param pll_clkin Input clock frequency in Hz
-   * @return true if configuration is valid, false if not
-   */
+/*!
+ * @brief Validate PLL configuration parameters
+ * 
+ * @param P PLL divider (1-8)
+ * @param R PLL multiplier (1-16)
+ * @param J PLL multiplier (1-63)
+ * @param D PLL fractional multiplier (0-2047)
+ * @param pll_clkin Input clock frequency in Hz
+ * @return true if configuration is valid, false if not
+ */
 bool Adafruit_TLV320DAC3100::validatePLLConfig(uint8_t P, uint8_t R, uint8_t J, 
                                               uint16_t D, float pll_clkin) {
   float pll_in_div_p = pll_clkin / P;
@@ -2058,8 +2123,94 @@ bool Adafruit_TLV320DAC3100::validatePLLConfig(uint8_t P, uint8_t R, uint8_t J,
   return true;
 }
 
-  uint8_t Adafruit_TLV320DAC3100::readRegister(uint8_t page, uint8_t reg) {
-    setPage(page);
-    Adafruit_BusIO_Register dac_reg = Adafruit_BusIO_Register(i2c_dev, reg);
-    return dac_reg.read();
+uint8_t Adafruit_TLV320DAC3100::readRegister(uint8_t page, uint8_t reg) {
+  setPage(page);
+  Adafruit_BusIO_Register dac_reg = Adafruit_BusIO_Register(i2c_dev, reg);
+  return dac_reg.read();
+}
+
+/*!
+ * @brief Read the IRQ flags register
+ * 
+ * @param sticky true to read the sticky version (0x2C), false to read the non-sticky version (0x2E)
+ * @return Byte containing the IRQ flags (use TLV320DAC3100_IRQ_* defines to interpret)
+ */
+uint8_t Adafruit_TLV320DAC3100::readIRQflags(bool sticky) {
+  if (!setPage(0)) {
+    return 0;
   }
+  
+  // Use appropriate register based on sticky flag
+  uint8_t reg = sticky ? TLV320DAC3100_REG_IRQ_FLAGS_STICKY : TLV320DAC3100_REG_IRQ_FLAGS;
+  
+  Adafruit_BusIO_Register flags_reg = Adafruit_BusIO_Register(i2c_dev, reg);
+  uint8_t flags = 0;
+  flags_reg.read(&flags);
+  
+  return flags;
+}
+
+/*!
+ * @brief Enable or disable the beep generator
+ * 
+ * @param enable true to enable beep, false to disable
+ * @return true: success, false: failure
+ */
+bool Adafruit_TLV320DAC3100::enableBeep(bool enable) {
+  if (!setPage(0)) {
+    return false;
+  }
+
+  Adafruit_BusIO_Register reg = Adafruit_BusIO_Register(i2c_dev, TLV320DAC3100_REG_BEEP_L);
+  Adafruit_BusIO_RegisterBits beep_enable = Adafruit_BusIO_RegisterBits(&reg, 1, 7);
+  
+  return beep_enable.write(enable);
+}
+
+/*!
+ * @brief Check if beep generator is currently active
+ * 
+ * @return true if beeping, false if not or on error
+ */
+bool Adafruit_TLV320DAC3100::isBeeping(void) {
+  if (!setPage(0)) {
+    return false;
+  }
+
+  Adafruit_BusIO_Register reg = Adafruit_BusIO_Register(i2c_dev, TLV320DAC3100_REG_BEEP_L);
+  Adafruit_BusIO_RegisterBits beep_enable = Adafruit_BusIO_RegisterBits(&reg, 1, 7);
+  
+  return beep_enable.read();
+}
+
+
+/*!
+ * @brief Configure beep generator for a specific frequency and duration
+ * 
+ * @param frequency Desired frequency in Hz (must be < sample_rate/4)
+ * @param duration_ms Length of beep in milliseconds
+ * @param sample_rate Sample rate in Hz (default 48000)
+ * @return true: success, false: frequency too high for sample rate or write failed
+ */
+bool Adafruit_TLV320DAC3100::configureBeepTone(float frequency, 
+                                              uint32_t duration_ms,
+                                              uint32_t sample_rate) {
+  // Check frequency limit (Fs/4)
+  if (frequency >= (sample_rate / 4.0f)) {
+    return false;
+  }
+
+  // Calculate sine and cosine coefficients
+  float angle = 2.0f * PI * frequency / sample_rate;
+  uint16_t sin_val = round(sin(angle) * 32767.0f);
+  uint16_t cos_val = round(cos(angle) * 32767.0f);
+
+  // Convert ms to samples
+  uint32_t length = (duration_ms * sample_rate) / 1000;
+  if (length > 0x00FFFFFF) {
+    length = 0x00FFFFFF;
+  }
+
+  return (setBeepSinCos(sin_val, cos_val) &&
+          setBeepLength(length));
+}
