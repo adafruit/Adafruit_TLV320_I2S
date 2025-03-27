@@ -631,13 +631,6 @@ bool Adafruit_TLV320DAC3100::getCodecInterface(tlv320dac3100_format_t *format,
   return true;
 }
 
-// In header:
-#define TLV320DAC3100_REG_DATA_SLOT_OFFSET 0x1C ///< Data-slot offset register
-
-bool setBCLKoffset(uint8_t offset);
-bool getBCLKoffset(uint8_t *offset);
-
-// In cpp:
 /*!
  * @brief Set the BCLK data slot offset
  * @param offset BCLK offset value (0-255)
