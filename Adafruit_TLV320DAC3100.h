@@ -69,7 +69,7 @@
 #define TLV320DAC3100_REG_VOL_ADC_READ 0x75 ///< VOL/MICDET-Pin Gain Register
 
 // Page 1
-#define TLV320DAC3100_REG_BCLK_CTRL2 0x1D
+#define TLV320DAC3100_REG_BCLK_CTRL2 0x1D ///< BCLK Control Register 2
 #define TLV320DAC3100_REG_HP_SPK_ERR_CTL                                       \
   0x1E ///< Headphone and Speaker Error Control Register
 #define TLV320DAC3100_REG_HP_DRIVERS 0x1F ///< Headphone Drivers Register
@@ -223,6 +223,10 @@ public:
   configureHeadphoneDriver(bool left_powered, bool right_powered,
                            tlv320_hp_common_t common = TLV320_HP_COMMON_1_35V,
                            bool powerDownOnSCD = false);
+  /*!
+   * @brief Check if headphone outputs have detected a short circuit
+   * @return true if short circuit detected, false if not
+   */
   bool isHeadphoneShorted(void);
   bool enableSpeaker(bool en);
   bool speakerEnabled(void);

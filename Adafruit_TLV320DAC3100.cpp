@@ -1012,6 +1012,11 @@ bool Adafruit_TLV320DAC3100::getGPIO1Input() {
   return gpio1_in.read();
 }
 
+/*!
+ * @brief Set the DIN pin mode
+ * @param mode The DIN pin mode/function
+ * @return true: success false: failure
+ */
 bool Adafruit_TLV320DAC3100::setDINMode(tlv320_din_mode_t mode) {
   if (!setPage(0)) {
     return false;
@@ -1026,6 +1031,10 @@ bool Adafruit_TLV320DAC3100::setDINMode(tlv320_din_mode_t mode) {
   return din_mode.write(mode);
 }
 
+/*!
+ * @brief Get the current DIN pin mode
+ * @return Current DIN mode setting
+ */
 tlv320_din_mode_t Adafruit_TLV320DAC3100::getDINMode() {
   if (!setPage(0)) {
     return TLV320_DIN_DISABLED;
@@ -1040,6 +1049,10 @@ tlv320_din_mode_t Adafruit_TLV320DAC3100::getDINMode() {
   return (tlv320_din_mode_t)din_mode.read();
 }
 
+/*!
+ * @brief Get the current DIN pin input value
+ * @return Current DIN input state (true or false)
+ */
 bool Adafruit_TLV320DAC3100::getDINInput() {
   if (!setPage(0)) {
     return false;
@@ -2209,6 +2222,12 @@ bool Adafruit_TLV320DAC3100::validatePLLConfig(uint8_t P, uint8_t R, uint8_t J,
   return true;
 }
 
+/*!
+ * @brief Read a register value from the device
+ * @param page The page number to access
+ * @param reg The register address within the page
+ * @return The value of the register
+ */
 uint8_t Adafruit_TLV320DAC3100::readRegister(uint8_t page, uint8_t reg) {
   setPage(page);
   Adafruit_BusIO_Register dac_reg = Adafruit_BusIO_Register(i2c_dev, reg);

@@ -176,6 +176,9 @@ typedef enum {
   TLV320_VOL_RATE_2KHZ = 0b111,     ///< 2 kHz (MCLK) or 1.37 kHz (RC)
 } tlv320_vol_rate_t;
 
+/*!
+ * @brief Headphone common-mode settings
+ */
 typedef enum {
   TLV320_HP_COMMON_1_35V = 0b00, ///< Common-mode voltage 1.35V
   TLV320_HP_COMMON_1_50V = 0b01, ///< Common-mode voltage 1.50V
@@ -254,6 +257,9 @@ typedef enum {
   TLV320_SPK_GAIN_24DB = 0b11, ///< 24 dB gain
 } tlv320_spk_gain_t;
 
+/*!
+ * @brief BCLK source settings
+ */
 typedef enum {
   TLV320DAC3100_BCLK_SRC_DAC_CLK = 0,
   TLV320DAC3100_BCLK_SRC_DAC_MOD_CLK = 1,
