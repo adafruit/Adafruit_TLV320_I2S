@@ -158,8 +158,8 @@ typedef enum {
  */
 typedef enum {
   TLV320_VOL_HYST_NONE = 0b00, ///< No hysteresis
-  TLV320_VOL_HYST_1BIT = 0b01, ///< ±1 bit hysteresis
-  TLV320_VOL_HYST_2BIT = 0b10, ///< ±2 bit hysteresis
+  TLV320_VOL_HYST_1BIT = 0b01, ///< Â±1 bit hysteresis
+  TLV320_VOL_HYST_2BIT = 0b10, ///< Â±2 bit hysteresis
 } tlv320_vol_hyst_t;
 
 /*!
