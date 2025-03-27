@@ -1,3 +1,17 @@
+/*!
+ * @file Adafruit_TLV320DAC3100_typedefs.h
+ *
+ * Arduino library for the TI TLV320DAC3100 stereo DAC with headphone amplifier
+ *
+ * Adafruit invests time and resources providing this open source code,
+ * please support Adafruit and open-source hardware by purchasing
+ * products from Adafruit!
+ *
+ * Written by Limor Fried for Adafruit Industries.
+ *
+ * MIT license, all text here must be included in any redistribution.
+ */
+
 #pragma once
 
 /*!
