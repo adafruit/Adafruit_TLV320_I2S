@@ -223,10 +223,6 @@ public:
   configureHeadphoneDriver(bool left_powered, bool right_powered,
                            tlv320_hp_common_t common = TLV320_HP_COMMON_1_35V,
                            bool powerDownOnSCD = false);
-  /*!
-   * @brief Check if headphone outputs have detected a short circuit
-   * @return true if short circuit detected, false if not
-   */
   bool isHeadphoneShorted(void);
   bool enableSpeaker(bool en);
   bool speakerEnabled(void);
