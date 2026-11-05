@@ -2118,6 +2118,24 @@ bool Adafruit_TLV320DAC3100::configureHeadphoneDriver(bool left_powered,
 }
 
 /*!
+ * @brief Check if headphone outputs have detected a short circuit
+ * @return true if short circuit detected, false if not
+ */
+bool Adafruit_TLV320DAC3100::isHeadphoneShorted(void) {
+  if (!setPage(1)) {
+    return false;
+  }
+
+  Adafruit_BusIO_Register hp_ctrl =
+      Adafruit_BusIO_Register(i2c_dev, TLV320DAC3100_REG_HP_DRIVERS);
+
+  Adafruit_BusIO_RegisterBits hp_shorted =
+      Adafruit_BusIO_RegisterBits(&hp_ctrl, 1, 0);
+
+  return (hp_shorted.read() > 0) ? true : false;
+}
+
+/*!
  * @brief Calculate and set PLL values for desired frequency
  *
  * @param mclk_freq MCLK input frequency in Hz
