@@ -12,6 +12,11 @@ void halt(const char *message) {
 void setup() {
   Serial.begin(115200);
 
+  // Wait for serial connection before starting the demo
+  // Good for RP2040/2350 boards
+  while (!Serial)
+    delay(10);
+
   pinMode(TLV_RESET, OUTPUT);
   digitalWrite(TLV_RESET, LOW);
   delay(100);
@@ -91,13 +96,16 @@ void setup() {
     halt("Failed to configure speaker output!");
   }
 
+// Configure headset detection with recommended settings from TI.
   if (!codec.configMicBias(false, true, TLV320_MICBIAS_AVDD) ||
+      !codec.configDelayDivider(false) || // Must use internal clock for delay timer
       !codec.setHeadsetDetect(true) ||
       !codec.setInt1Source(true, true, false, false, false,
                            false) || // GPIO1 is detect headset or button press
       !codec.setGPIO1Mode(TLV320_GPIO1_INT1)) {
     halt("Failed to configure headset detect");
   }
+
   Serial.println("TLV config done!");
 }
 
@@ -112,7 +120,7 @@ void loop() {
       Serial.println("Headset removed");
       break;
     case TLV320_HEADSET_WITHOUT_MIC:
-      Serial.println("Headphones detected");
+      Serial.println("Headset detected");
       break;
     case TLV320_HEADSET_WITH_MIC:
       Serial.println("Headset with mic detected");

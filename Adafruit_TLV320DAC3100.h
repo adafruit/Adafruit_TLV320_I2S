@@ -200,8 +200,8 @@ public:
 
   bool setHeadsetDetect(
       bool enable,
-      tlv320_detect_debounce_t detect_debounce = TLV320_DEBOUNCE_16MS,
-      tlv320_button_debounce_t button_debounce = TLV320_BTN_DEBOUNCE_0MS);
+      tlv320_detect_debounce_t detect_debounce = TLV320_DEBOUNCE_64MS,
+      tlv320_button_debounce_t button_debounce = TLV320_BTN_DEBOUNCE_16MS);
   tlv320_headset_status_t getHeadsetStatus(void);
 
   bool isBeeping(void);
